@@ -2,21 +2,54 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-						http://www.springframework.org/schema/contex http://www.springframework.org/schema/context/spring-context.xsd
-						http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:text="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			    http://www.springframework.org/schema/beans/spring-beans.xsd
+			    http://www.springframework.org/schema/context
+			    http://www.springframework.org/schema/context/spring-context.xsd
+			    http://www.springframework.org/schema/aop
+			    http://www.springframework.org/schema/aop/spring-aop.xsd
+			    http://www.springframework.org/schema/tx
+			    http://www.springframework.org/schema/tx/spring-tx.xsd
+			    http://www.springframework.org/schema/mvc
+			    http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
     <!--以上是给xml文件设置一个约束-->
 
-    <!--设置数据源开始-->
-        <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
-            <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
-            <property name="url" value="jdbc:mysql://localhost:3306/activiti"/>
-            <property name="username" value="root"/>
+<!-- dao层配置开始-->
+    <!--1、设置数据源-->
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+            <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+            <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/maven"/>
+            <property name="user" value="root"/>
             <property name="password" value="root"/>
         </bean>
-    <!--设置数据源结束-->
+    <!--2、创建一个生产sqlSession对象的工厂对象（sqlSession是用于进行CRUD<增删改查>操作），所以必须连接数据库-->
+        <bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+            <!--引入数据源-->
+            <property name="dataSource" ref="dataSource"/>
+            <!--给pojo对象起别名(此处注解可以省略)-->
+            <!--因为在实现dao层接口的映射文件中需要使用typeAliasesPackage别名-->
+            <!--value="com.maven.entity"这样写，这个包下面所以实体类的别名就是当前实体类名称-->
+            <property name="typeAliasesPackage" value="com.maven.entity"/>
+        </bean>
+    <!--3、我们对所有dao接口包下的接口进行了扫描，使用sqlSession对象给其创建代理对象，并且放入到容器中-->
+        <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+            <property name="basePackage" value="com.maven.dao"/>
+        </bean>
+<!-- dao层配置结束-->
 
-    <!--设置启动数据源-->
-<!--    <bean id="dataSourceConfiguration" class="dataS"> </bean>-->
+<!--service层配置开始-->
+        <!--组件扫描-->
+        <context:component-scan base-package="com.maven.service"/>
+
+        <!--配置事务管理器-->
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+            <property name="dataSource" ref="dataSource"/>
+        </bean>
+        <!--开启对事务注解的支持-->
+        <text:annotation-driven/>
+
+<!--service层配置结束-->
 </beans>
